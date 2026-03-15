@@ -30,6 +30,8 @@ class RakutenTVRequest:
         self._channels_cache_time = {}
         self._categories_cache = {}
         self._categories_cache_time = {}
+        self._avod_movies_cache = {}
+        self._avod_movies_cache_time = {}
 
     def _get_classification_id(self, region):
         return CLASSIFICATION_IDS.get(region, CLASSIFICATION_IDS.get("de", 307))
@@ -179,35 +181,120 @@ class RakutenTVRequest:
         result.sort(key=lambda x: x["number"])
         return result
 
-    def getVODCategories(self, region=None):
-        """Get VOD-style categories with channel items (for the plugin browser UI)."""
+    def getAVODMovies(self, region=None):
+        """Fetch AVOD (free) movies from Rakuten TV API with pagination. Returns list of movie dicts."""
         region = region or config.plugins.rakutentv.region.value
-        channels = self.getChannels(region)
-        if not channels:
+        now = time.time()
+        if region in self._avod_movies_cache and now - self._avod_movies_cache_time.get(region, 0) < 4 * 3600:
+            return self._avod_movies_cache[region]
+
+        params = self._get_base_params(region)
+        params["per_page"] = 100
+
+        movies = []
+        page = 1
+        while True:
+            params["page"] = page
+            try:
+                response = self.session.get(f"{self.API_BASE}/avod/movies", params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                page_movies = data.get("data", [])
+                movies.extend(page_movies)
+                meta = data.get("meta", {})
+                total = meta.get("total_count", len(movies))
+                if len(movies) >= total or not page_movies:
+                    break
+                page += 1
+            except Exception as e:
+                print(f"[RakutenTV] getAVODMovies error (page {page}): {e}")
+                break
+
+        self._avod_movies_cache[region] = movies
+        self._avod_movies_cache_time[region] = now
+        print(f"[RakutenTV] getAVODMovies: {len(movies)} movies for {region}")
+        return movies
+
+    def getVODCategories(self, region=None):
+        """Get VOD movie categories grouped by genre (for the plugin browser UI)."""
+        region = region or config.plugins.rakutentv.region.value
+        movies = self.getAVODMovies(region)
+        if not movies:
             return []
 
         categories = {}
-        for ch in channels:
-            group = ch.get("category", "Uncategorized")
+        for movie in movies:
+            genres = movie.get("genres", [])
+            group = genres[0].get("name", "Uncategorized") if genres else "Uncategorized"
             if group not in categories:
                 categories[group] = {
                     "name": group,
                     "items": [],
                 }
+
+            images = movie.get("images", {})
+            logo = ""
+            for key in ("poster", "artwork", "snapshot"):
+                if key in images and images[key]:
+                    logo = images[key]
+                    break
+            if not logo:
+                logo = next((v for v in images.values() if v), "")
+
+            classification = movie.get("classification", {})
+            summary = classification.get("description", "") if isinstance(classification, dict) else ""
+
+            duration_minutes = int(movie.get("duration", 0) or 0)
+
             categories[group]["items"].append({
-                "_id": ch["_id"],
-                "name": ch["name"],
-                "summary": ch.get("description", ""),
+                "_id": movie.get("id", ""),
+                "name": movie.get("title", ""),
+                "summary": summary,
                 "genre": group,
-                "rating": "",
-                "duration": 0,
-                "type": "channel",
+                "rating": movie.get("rating", ""),
+                "duration": duration_minutes * 60,
+                "type": movie.get("type", "movie"),
                 "stream_url": "",  # resolved at play time
-                "logo": ch.get("logo", ""),
-                "language_id": ch.get("language_id", "ENG"),
+                "logo": logo,
+                "language_id": "ENG",
             })
 
         return sorted(categories.values(), key=lambda x: x["name"].casefold())
+
+    def getVODStreamURL(self, movie_id, language_id, region=None):
+        """Get HLS stream URL for a VOD movie via the AVOD streaming endpoint."""
+        region = region or config.plugins.rakutentv.region.value
+        params = self._get_base_params(region)
+        params.update({
+            "device_stream_audio_quality": "2.0",
+            "device_stream_hdr_type": "NONE",
+            "device_stream_video_quality": "FHD",
+            "disable_dash_legacy_packages": False,
+        })
+        data = {
+            "audio_language": language_id,
+            "audio_quality": "2.0",
+            "classification_id": self._get_classification_id(region),
+            "content_id": movie_id,
+            "content_type": "movies",
+            "device_serial": "enigma2",
+            "player": "web:HLS-NONE:NONE",
+            "strict_video_quality": False,
+            "subtitle_language": "MIS",
+            "video_type": "stream",
+        }
+
+        try:
+            response = self.session.post(f"{self.API_BASE}/avod/streamings", params=params, json=data, timeout=10)
+            response.raise_for_status()
+            result = response.json()
+            stream_infos = result.get("data", {}).get("stream_infos", [])
+            if stream_infos:
+                url = stream_infos[0].get("url", "")
+                return url
+        except Exception as e:
+            print(f"[RakutenTV] getVODStreamURL error for {movie_id}: {e}")
+        return ""
 
     def buildStreamURL(self, channel_id, region=None):
         """Resolve the actual HLS stream URL for a channel."""

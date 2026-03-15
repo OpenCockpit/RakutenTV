@@ -111,7 +111,7 @@ class RakutenTV(Screen, HelpableScreen):
 
         self.colors = parameters.get("RakutenTvColors", [])
 
-        self.titlemenu = _("Channel Categories")
+        self.titlemenu = _("Categories")
         self["feedlist"] = RakutenList([])
         self["playlist"] = StaticText(self.titlemenu)
         self["loading"] = Label(_("Loading data... Please wait"))
@@ -313,7 +313,10 @@ class RakutenTV(Screen, HelpableScreen):
             sid = film[0]
             name = film[1]
             language_id = film[10]
-            url = rakutenRequest.getLiveStreamURL(sid, language_id, self.region)
+            if __type == "movie":
+                url = rakutenRequest.getVODStreamURL(sid, language_id, self.region)
+            else:
+                url = rakutenRequest.getLiveStreamURL(sid, language_id, self.region)
             if url:
                 self.playStream(name, sid, url)
 
