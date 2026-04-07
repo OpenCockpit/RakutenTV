@@ -1,0 +1,7 @@
+#!/bin/sh
+echo "Cleaning up after RakutenTV removal..."
+rm -rf -- /usr/lib/enigma2/python/Plugins/Extensions/RakutenTV >/dev/null 2>&1
+rm -rf -- /etc/enigma2/RakutenTV >/dev/null 2>&1
+# remove matching names safely (handles spaces and leading `-` in names)
+find /etc/enigma2/ -maxdepth 1 \( -name 'RakutenTV*' -o -name 'rakutentv*' \) -exec rm -rf -- {} + 2>/dev/null
+exit 0
