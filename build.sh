@@ -45,6 +45,7 @@ tar -cvzf control.tar.gz ./*
 cd ..
 mv ./control/control.tar.gz .
 
+echo "2.0" > debian-binary
 ar -r ../${package}_${version_updated}_all.ipk debian-binary control.tar.gz data.tar.gz
 
 cd $CURRENT

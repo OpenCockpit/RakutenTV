@@ -12,7 +12,7 @@ from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools.Directories import fileExists
 from enigma import eDVBDB, eEPGCache, eTimer
-from twisted.internet import threads
+from twisted.internet import threads, reactor
 
 from . import _
 from .RakutenTVConfig import REGION_NAMES, TSIDS, getselectedregions
@@ -67,12 +67,20 @@ class RakutenTVDownloadBase:
             return
         self.ccGenerator = self.cc()
         self.piconFetcher = PiconFetcher(self)
-        self.manager()
+        threads.deferToThread(self._downloadThread)
 
-    def manager(self):
+    def _downloadThread(self):
+        """Run the entire download workflow in a background thread."""
+        try:
+            self._managerThread()
+        except Exception as e:
+            print(f"[RakutenTV Download] Error in download thread: {e}")
+            RakutenTVDownloadBase.downloadActive = False
+
+    def _managerThread(self):
         RakutenTVDownloadBase.downloadActive = True
         if cc := next(self.ccGenerator, None):
-            self.downloadBouquet(cc)
+            self._downloadBouquetThread(cc)
         else:
             self.channelsList.clear()
             self.categories.clear()
@@ -80,27 +88,31 @@ class RakutenTVDownloadBase:
             self.ccGenerator = None
             if self.piconFetcher.piconList:
                 self.total = len(self.piconFetcher.piconList)
-                threads.deferToThread(self.updateProgressBar, 0)
-                threads.deferToThread(self.updateAction, _("picons"))
-                threads.deferToThread(self.updateStatus, _("Fetching picons..."))
+                reactor.callFromThread(self.updateProgressBar, 0)
+                reactor.callFromThread(self.updateAction, _("picons"))
+                reactor.callFromThread(self.updateStatus, _("Fetching picons..."))
                 self.piconFetcher.fetchPicons()
-                threads.deferToThread(self.updateProgressBar, self.total)
+                reactor.callFromThread(self.updateProgressBar, self.total)
             self.piconFetcher = None
-            threads.deferToThread(self.updateStatus, _("LiveTV update completed"))
+            reactor.callFromThread(self.updateStatus, _("LiveTV update completed"))
             time.sleep(3)
-            self.exitOk()
-            self.start()
+            reactor.callFromThread(self.exitOk)
+            reactor.callFromThread(self.start)
 
-    def downloadBouquet(self, cc):
+    def manager(self):
+        """Legacy entry point - redirects to threaded version."""
+        threads.deferToThread(self._managerThread)
+
+    def _downloadBouquetThread(self, cc):
         self.bouquet = []
         self.bouquetCC = cc
         self.tsid = TSIDS.get(cc, "0")
-        self.stop()
+        reactor.callFromThread(self.stop)
         self.channelsList.clear()
         self.categories.clear()
-        threads.deferToThread(self.updateAction, cc)
-        threads.deferToThread(self.updateProgressBar, 0)
-        threads.deferToThread(self.updateStatus, _("Processing data..."))
+        reactor.callFromThread(self.updateAction, cc)
+        reactor.callFromThread(self.updateProgressBar, 0)
+        reactor.callFromThread(self.updateStatus, _("Processing data..."))
 
         channels = sorted(rakutenRequest.getChannels(cc), key=lambda x: x["number"])
         for channel in channels:
@@ -113,7 +125,7 @@ class RakutenTVDownloadBase:
         self.total = len(channels)
 
         if len(self.categories) == 0:
-            self.noCategories()
+            reactor.callFromThread(self.noCategories)
         else:
             if self.categories[0] in self.channelsList:
                 self.subtotal = len(self.channelsList[self.categories[0]])
@@ -161,7 +173,7 @@ class RakutenTVDownloadBase:
                         continue
                     sref, event = item
                     evt_cnt += 1
-                    self.epgcache.importEvents(sref, [event])
+                    reactor.callFromThread(self.epgcache.importEvents, sref, [event])
                 print(f"[RakutenTV Download] {evt_cnt} EPG events imported for {cc}")
         except Exception as e:
             print(f"[RakutenTV Download] EPG import error for {cc}: {e}")
@@ -171,7 +183,7 @@ class RakutenTVDownloadBase:
 
     def updateprogress(self, param):
         if hasattr(self, "state") and self.state == 1:
-            threads.deferToThread(self.updateProgressBar, param)
+            reactor.callFromThread(self.updateProgressBar, param)
             if param < self.total:
                 key = self.categories[self.key]
                 if self.chitem == self.subtotal:
@@ -193,13 +205,13 @@ class RakutenTVDownloadBase:
                 ref = f"4097:0:1:{ch_sid}:{self.tsid}:1:2:0:0:0"
                 self.bouquet.append(f"{ref}:{stream_url}:{ch_name}")
                 self.chitem += 1
-                threads.deferToThread(self.updateStatus, _("Waiting for Channel: ") + ch_name)
+                reactor.callFromThread(self.updateStatus, _("Waiting for Channel: ") + ch_name)
 
                 self.piconFetcher.addPicon(ref, ch_name, ch_logourl, self.silent)
             else:
                 bouquet_name = BOUQUET_NAME % REGION_NAMES.get(self.bouquetCC, self.bouquetCC).upper()
                 bouquet_file = BOUQUET_FILE % self.bouquetCC
-                eDVBDB.getInstance().addOrUpdateBouquet(bouquet_name, bouquet_file, self.bouquet, False)
+                reactor.callFromThread(eDVBDB.getInstance().addOrUpdateBouquet, bouquet_name, bouquet_file, self.bouquet, False)
                 bouquet_path = "/etc/enigma2/" + bouquet_file
                 if os.path.isfile(bouquet_path):
                     with open(bouquet_path, "r", encoding="utf-8") as f:
@@ -211,7 +223,7 @@ class RakutenTVDownloadBase:
                 os.makedirs(os.path.dirname(TIMER_FILE), exist_ok=True)
                 with open(TIMER_FILE, "w", encoding="utf-8") as f:
                     f.write(str(time.time()))
-                self.manager()
+                self._managerThread()
 
     def buildM3U(self, channel):
         logo = channel.get("logo", "")

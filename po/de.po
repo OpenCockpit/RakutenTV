@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RakutenTV\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-07 20:17+0000\n"
+"POT-Creation-Date: 2026-05-30 21:18+0000\n"
 "PO-Revision-Date: 2026-03-13 19:30+0100\n"
 "Last-Translator: xcentaurix\n"
 "Language-Team: xcentaurix\n"
@@ -51,7 +51,7 @@ msgstr "Lade Rakuten TV Bouquet, Picons und EPG"
 msgid "Exit"
 msgstr "Beenden"
 
-#: ../src/RakutenTVDownload.py:85
+#: ../src/RakutenTVDownload.py:93
 msgid "Fetching picons..."
 msgstr "Picons werden heruntergeladen..."
 
@@ -84,7 +84,7 @@ msgstr "LiveTV-Bouquet muss aktualisiert werden, drücke 'Grün'."
 msgid "LiveTV bouquet %s"
 msgstr "LiveTV-Bouquet %s"
 
-#: ../src/RakutenTVDownload.py:89
+#: ../src/RakutenTVDownload.py:97
 msgid "LiveTV update completed"
 msgstr "LiveTV-Update fertiggestellt"
 
@@ -113,15 +113,15 @@ msgstr "Öffne Plugin-Konfiguration"
 msgid "Picon type"
 msgstr "Picon-Typ"
 
-#: ../src/RakutenTVDownload.py:280
+#: ../src/RakutenTVDownload.py:292
 msgid "Please wait..."
 msgstr "Bitte warten..."
 
-#: ../src/RakutenTVDownload.py:103
+#: ../src/RakutenTVDownload.py:115
 msgid "Processing data..."
 msgstr "Daten werden verarbeitet..."
 
-#: ../src/plugin.py:169 ../src/plugin.py:294 ../src/plugin.py:325
+#: ../src/plugin.py:169 ../src/plugin.py:296 ../src/plugin.py:325
 #: ../src/plugin.py:519
 msgid "Rakuten TV"
 msgstr ""
@@ -130,7 +130,7 @@ msgstr ""
 msgid "Rakuten TV Setup"
 msgstr "Rakuten TV Konfiguration"
 
-#: ../src/RakutenTVDownload.py:273
+#: ../src/RakutenTVDownload.py:285
 msgid "Rakuten TV updating"
 msgstr "Rakuten TV aktualisieren"
 
@@ -191,11 +191,11 @@ msgstr ""
 "\n"
 "Wird automatisch alle 3 Stunden aktualisiert."
 
-#: ../src/RakutenTVDownload.py:292
+#: ../src/RakutenTVDownload.py:304
 msgid "The download is in progress. Exit now?"
 msgstr "Der Download ist im Gange. Jetzt beenden?"
 
-#: ../src/plugin.py:235 ../src/RakutenTVDownload.py:317
+#: ../src/plugin.py:237 ../src/RakutenTVDownload.py:329
 msgid "There is no data, it is possible that Rakuten TV is not available in your region"
 msgstr "Es gibt keine Daten, es ist möglich, dass Puto TV in deinem Land nicht verfügbar ist"
 
@@ -203,7 +203,7 @@ msgstr "Es gibt keine Daten, es ist möglich, dass Puto TV in deinem Land nicht 
 msgid "Update LiveTV Bouquet"
 msgstr "Update LiveTV-Bouquet"
 
-#: ../src/RakutenTVDownload.py:285
+#: ../src/RakutenTVDownload.py:297
 #, python-format
 msgid "Updating: Rakuten TV %s"
 msgstr "Rakuten TV wird aktualisiert: %s"
@@ -216,7 +216,7 @@ msgstr "Wird zum Speichern von Video-Covern etc. verwendet."
 msgid "Using service name picons means they will continue to work even if the service reference changes."
 msgstr "Servicenamen Picons können universell verwendet werden."
 
-#: ../src/RakutenTVDownload.py:196
+#: ../src/RakutenTVDownload.py:208
 msgid "Waiting for Channel: "
 msgstr "Warten auf Kanal: "
 
@@ -224,7 +224,7 @@ msgstr "Warten auf Kanal: "
 msgid "Yes"
 msgstr "Ja"
 
-#: ../src/RakutenTVDownload.py:84
+#: ../src/RakutenTVDownload.py:92
 msgid "picons"
 msgstr "Picons"
 

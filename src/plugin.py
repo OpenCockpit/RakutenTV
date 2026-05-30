@@ -230,7 +230,9 @@ class RakutenTV(Screen, HelpableScreen):
 
     def getCategories(self):
         self.lvod = {}
-        categories = rakutenRequest.getLiveCategories(self.region)
+        threads.deferToThread(rakutenRequest.getLiveCategories, self.region).addCallback(self._getCategoriesCallback)
+
+    def _getCategoriesCallback(self, categories):
         if not categories:
             self.session.open(MessageBox, _("There is no data, it is possible that Rakuten TV is not available in your region"), type=MessageBox.TYPE_ERROR, timeout=10)
         else:
@@ -298,9 +300,7 @@ class RakutenTV(Screen, HelpableScreen):
             sid = film[0]
             name = film[1]
             language_id = film[10]
-            url = rakutenRequest.getLiveStreamURL(sid, language_id, self.region)
-            if url:
-                self.playStream(name, sid, url)
+            threads.deferToThread(rakutenRequest.getLiveStreamURL, sid, language_id, self.region).addCallback(lambda url, n=name, s=sid: self.playStream(n, s, url) if url else None)
 
     def back(self):
         if not (selection := self.getSelection()):

@@ -5,12 +5,11 @@ import os
 import shutil
 import threading
 import time
-
+from itertools import count as _count
+import requests
+from twisted.internet import reactor
 from Components.config import config
 from Tools.Directories import fileExists, sanitizeFilename
-import requests
-from twisted.internet import threads
-
 from .Variables import PLUGIN_FOLDER, PLUGIN_ICON, USER_AGENT
 
 
@@ -40,7 +39,7 @@ class PiconFetcher:
 
     def fetchPicons(self):
         maxthreads = 100
-        self.counter = 0
+        self._counter = _count()
         failed = []
         self.createFolders()
         if self.piconList:
@@ -59,7 +58,7 @@ class PiconFetcher:
 
     def downloadURL(self, url, piconname):
         filepath = os.path.join(self.pluginPiconDir, piconname.removeprefix(self.piconDir).removeprefix(os.sep))
-        self.counter += 1
+        counter = next(self._counter)
         try:
             dl_url = url if "?" in url else f"{url}{self.resolutionStr}"
             response = requests.get(dl_url, timeout=2.50, headers={"User-Agent": USER_AGENT})
@@ -74,7 +73,7 @@ class PiconFetcher:
             filepath = self.defaultIcon
         self.makesoftlink(filepath, piconname)
         if self.parent:
-            threads.deferToThread(self.parent.updateProgressBar, self.counter)
+            reactor.callFromThread(self.parent.updateProgressBar, counter)
 
     def makesoftlink(self, filepath, softlinkpath):
         svgpath = softlinkpath.removesuffix(".png") + ".svg"
