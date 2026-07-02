@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <skin>
-	<screen flags="wfNoBorder" name="RakutenTV" position="0,0" resolution="1920,1080" size="1920,1080" title="Rakuten TV" transparent="0" zPosition="2">
-		<ePixmap alphatest="off" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RakutenTV/skin/images/rakutentv-backdrop.jpg" position="0,0" size="1920,1080" zPosition="-2"/>
+	<screen flags="wfNoBorder" name="RakutenTVCockpit" position="0,0" resolution="1920,1080" size="1920,1080" title="Rakuten TV" transparent="0" zPosition="2">
+		<ePixmap alphatest="off" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RakutenTVCockpit/skin/images/rakutentv-backdrop.jpg" position="0,0" size="1920,1080" zPosition="-2"/>
 		<eLabel backgroundColor="#16101113" cornerRadius="12" position="70,30" size="1780,90" zPosition="1"/>
 		<ePixmap alphatest="blend" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/RakutenTV/skin/images/logo.jpg" position="70,30" scale="1" size="486,90" transparent="1" zPosition="5"/>
 		<widget backgroundColor="#00000000" font="Regular;43" halign="right" position="e-400,48" render="Label" size="300,55" source="global.CurrentTime" transparent="1" zPosition="5">

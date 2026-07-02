@@ -39,4 +39,4 @@ Rakuten TV offers Video-On-Demand but requires Widevine for playback
 - Rakuten TV supports OpenViX and compatible Open distributions.
 
 ## Links
-- Installation: https://opencockpit.github.io/RakutenTV
+- Installation: https://opencockpit.github.io/RakutenTVCockpit
